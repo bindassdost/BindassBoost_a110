@@ -31,6 +31,7 @@
 #include "mach/mt_cpe.h"
 #include "mach/mt_boot.h"
 #include "mach/mtk_cpu_management.h"
+#include "mach/mt_cpufreq.h"
 
 #include "mach/pmic_mt6329_hw_bank1.h"
 #include "mach/pmic_mt6329_sw_bank1.h"
@@ -165,6 +166,10 @@ static unsigned int g_cur_freq;
 static unsigned int g_limited_freq;
 static unsigned int g_limited_min_freq;
 
+//Bindass-Boost Smart overclocking manager flags
+static unsigned int Base_freq = 0x4CA0;
+static bool BBoost_Overclock = false;
+
 static int g_ramp_down_count = 0;
 
 static bool mtk_cpufreq_debug = false;
@@ -291,6 +296,18 @@ static unsigned int mtk_cpufreq_get(unsigned int cpu)
     return g_cur_freq;
 }
 
+//Bindass-Boost Smart overclocking Flags Update
+void BBoost_Overclcock_manage(unsigned int overclock_freq)
+{
+  if(overclock_freq == 0x51e0){
+     BBoost_Overclock = true;
+     Base_freq = 0x51e0;
+  }else {
+     BBoost_Overclock = false;
+     Base_freq = 0x4ca0;
+  }
+}
+
 /*****************************************
 * frequency ramp up and ramp down handler
 ******************************************/
@@ -337,7 +354,7 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         {
             DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-            DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+            DRV_WriteReg32(ARMPLL_CON0, Base_freq);
             udelay(PMIC_SETTLE_TIME);
 
             DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -365,11 +382,11 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         }
         else
         {
-            if (DRV_Reg32(ARMPLL_CON0) != 0x4CA0)
+            if (DRV_Reg32(ARMPLL_CON0) != Base_freq)
             {
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-                DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+                DRV_WriteReg32(ARMPLL_CON0, Base_freq);
                 udelay(PMIC_SETTLE_TIME);
 
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -400,11 +417,11 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         }
         else
         {
-            if (DRV_Reg32(ARMPLL_CON0) != 0x4CA0)
+            if (DRV_Reg32(ARMPLL_CON0) != Base_freq)
             {
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-                DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+                DRV_WriteReg32(ARMPLL_CON0, Base_freq);
                 udelay(PMIC_SETTLE_TIME);
 
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -435,11 +452,11 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         }
         else
         {
-            if (DRV_Reg32(ARMPLL_CON0) != 0x4CA0)
+            if (DRV_Reg32(ARMPLL_CON0) != Base_freq)
             {
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-                DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+                DRV_WriteReg32(ARMPLL_CON0, Base_freq);
                 udelay(PMIC_SETTLE_TIME);
 
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -470,11 +487,11 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         }
         else
         {
-            if (DRV_Reg32(ARMPLL_CON0) != 0x4CA0)
+            if (DRV_Reg32(ARMPLL_CON0) != Base_freq)
             {
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-                DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+                DRV_WriteReg32(ARMPLL_CON0, Base_freq);
                 udelay(PMIC_SETTLE_TIME);
 
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -505,11 +522,11 @@ static void mtk_cpufreq_set(unsigned int freq_old, unsigned int freq_new)
         }
         else
         {
-            if (DRV_Reg32(ARMPLL_CON0) != 0x4CA0)
+            if (DRV_Reg32(ARMPLL_CON0) != Base_freq)
             {
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) & 0x0FF3));
 
-                DRV_WriteReg32(ARMPLL_CON0, 0x4CA0);
+                DRV_WriteReg32(ARMPLL_CON0, Base_freq);
                 udelay(PMIC_SETTLE_TIME);
 
                 DRV_WriteReg32(TOP_CKMUXSEL, (DRV_Reg32(TOP_CKMUXSEL) | 0x0008));
@@ -909,6 +926,11 @@ void mtk_cpufreq_early_suspend(struct early_suspend *h)
         goto no_policy;
 
     g_is_sreen_off = true;
+
+    //Bindass-Boost Smart Stockclocking when Screen Off & Overclocked
+    if(BBoost_Overclock){
+       Base_freq = 0x4ca0;
+    }
     
     if (get_chip_ver() >= CHIP_6575_E2 && get_chip_ver() < CHIP_6577_E1)
         g_limited_min_freq = DVFS_F7;
@@ -940,6 +962,10 @@ void mtk_cpufreq_late_resume(struct early_suspend *h)
     xlog_printk(ANDROID_LOG_INFO, "Power/DVFS", "enter late resume - restore dvs_00 to working voltage (%u) for DVFS\n", g_dvs_volt);
 
     g_is_sreen_off = false;
+    //Bindass-Boost Smart overclocking when Screen Off & Overclocked 
+    if(BBoost_Overclock){
+       Base_freq = 0x51e0;
+    }
 
     if (get_chip_ver() >= CHIP_6575_E2 && get_chip_ver() < CHIP_6577_E1)
         g_limited_min_freq = DVFS_F8;
