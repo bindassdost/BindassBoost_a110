@@ -677,6 +677,7 @@
 0x00000000	nf_ct_l3protos	vmlinux	EXPORT_SYMBOL_GPL
 0x00000000	linkwatch_fire_event	vmlinux	EXPORT_SYMBOL
 0x00000000	snd_device_free	vmlinux	EXPORT_SYMBOL
+0x00000000	sweep2wake_setdev	vmlinux	EXPORT_SYMBOL
 0x00000000	nand_calculate_ecc	vmlinux	EXPORT_SYMBOL
 0x00000000	__rcu_read_lock	vmlinux	EXPORT_SYMBOL_GPL
 0x00000000	mt_set_gpio_pull_select	vmlinux	EXPORT_SYMBOL

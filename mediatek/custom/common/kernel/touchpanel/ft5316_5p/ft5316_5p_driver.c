@@ -63,6 +63,10 @@
 #include <mach/mt_typedefs.h>
 #include <mach/mt_boot.h>
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+#endif
+
 
 #define TPD_SLAVE_ADDR 0x72	//ES980=0x72  //ES970=0x7E	//default = 0x70
 
@@ -148,6 +152,7 @@ static struct i2c_client *i2c_client = NULL;
 static struct task_struct *thread = NULL;
 static DECLARE_WAIT_QUEUE_HEAD(waiter);
 static int tpd_flag=0;
+static int s2w_st_flag=0;
 extern int tp_boot_mode;
 
 //edit by Magnum 2012-8-31 ctp up Questions
@@ -258,7 +263,6 @@ static int __devexit tpd_remove(struct i2c_client *client)
  
    return 0;
 }
- 
 
 int tpd_local_init(void) {
     int i;
@@ -507,6 +511,25 @@ static void tinno_tp_power_off(void)
     
 }    
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+/* gives back true if only one touch is recognized */
+bool is_single_touch(void)
+{
+	/*int i = 0, cnt = 0;
+
+	for( i= 0; i<MAX_NUM_FINGER; i++ ) {
+		if ((!fingerInfo[i].status) ||
+				(fingerInfo[i].status == TOUCH_EVENT_RELEASE))
+		continue;
+		else cnt++;
+	}*/
+printk("[SWEEP2WAKE]: inside single touch\n");
+	if (s2w_st_flag == 1)
+	return true;
+	else
+	return false;
+}
+#endif
 
 static int tpd_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 
@@ -612,7 +635,6 @@ static void tpd_eint_interrupt_handler(void) {
     TPD_DEBUG_PRINT_INT; tpd_flag=1; wake_up_interruptible(&waiter);
 }
 
-
 static void tpd_down(int x, int y, int id) {
     if(tpd_status)
     {
@@ -626,6 +648,13 @@ static void tpd_down(int x, int y, int id) {
 		input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, id-1); 
 	    input_mt_sync(tpd->dev);
 	    tpd_down_state=1;
+printk("[SWEEP2WAKE]: tpd down\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+		if (sweep2wake) {
+printk("[SWEEP2WAKE]: detecting sweep\n");
+			detect_sweep2wake(x, y, jiffies, id);
+		}
+#endif
 	    down_x=x;
 	    down_y=y;
 	     }
@@ -661,7 +690,26 @@ static void tpd_up(int x, int y,int *count) {
 //Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_X, x);
 //Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_Y, y);
 	    input_mt_sync(tpd->dev);
-	    
+printk("[SWEEP2WAKE]: inside tpd up\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+s2w_st_flag = 0;
+				if (sweep2wake > 0) {
+					printk("[sweep2wake]:line : %d | func : %s\n", __LINE__, __func__);
+printk("[SWEEP2WAKE]: resetin s2w param\n");
+					printk("[sweep2wake]:line : %d | func : %s\n", __LINE__, __func__);
+					exec_count = true;
+					barrier[0] = false;
+					barrier[1] = false;
+					scr_on_touch = false;
+					tripoff = 0;
+					tripon = 0;
+					triptime = 0;
+				}
+				if (doubletap2wake && scr_suspended) {
+printk("[SWEEP2WAKE]: detecting d2w\n");
+					doubletap2wake_func(x, y, jiffies);
+				}
+#endif
              tpd_down_state=0;
              down_x=0;
              down_y=0;
@@ -872,6 +920,7 @@ static int touch_event_handler(void *unused) {
 		if(cinfo.count > 0)
 		{
 			int i;
+s2w_st_flag = cinfo.count;
 			for ( i=0; i < cinfo.count; i++ )
 			{
 			    TPD_DEBUG("cinfo->count == %d!\n", cinfo.count);
@@ -894,6 +943,12 @@ static int touch_event_handler(void *unused) {
 
 /* platform device functions */
 void tpd_suspend(struct early_suspend *h) {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	scr_suspended = true;
+printk("[SWEEP2WAKE]: early suspernd\n");
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
 //    char sleep[2] = {0xA5,0x03};
     printk("[mtk-tpd] Suspend++.\n");
 //edit by Magnum 2012-3-20
@@ -921,11 +976,21 @@ void tpd_suspend(struct early_suspend *h) {
 
     printk("[mtk-tpd] Suspend--.tpd_down_state=%d\n",tpd_down_state);
 }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0)
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+#endif
+}
 
 
 void tpd_resume(struct early_suspend *h) {
 //    char wakeup[2] = {0xA5,0x00};
-
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+printk("[SWEEP2WAKE]: resume\n");
+	scr_suspended = false;
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
 //Ivan
     TPD_DEBUG("TP tpd_resume\n");
     
@@ -943,7 +1008,12 @@ void tpd_resume(struct early_suspend *h) {
     tpd_status = 1;
 //Ivan 6573    MT6516_IRQUnmask(MT6516_TOUCH_IRQ_LINE); 
     mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);  
-    printk("[mtk-tpd] Resume--.\n");  
+    printk("[mtk-tpd] Resume--.\n"); 
+}
+ #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0)
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+#endif
 }
 #endif
 
