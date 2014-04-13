@@ -50,8 +50,8 @@
 ** limitations under the License.
 */
 
-#ifndef _CAMERA_AE_PLINETABLE_OV8826MIPIRAWRAW_H
-#define _CAMERA_AE_PLINETABLE_OV8826MIPIRAWRAW_H
+#ifndef _CAMERA_AE_PLINETABLE_OV8827MIPIRAWRAW_H
+#define _CAMERA_AE_PLINETABLE_OV8827MIPIRAWRAW_H
 
 #include "aaa_param.h"
 static strEvSetting sPreviewPLineTable_60Hz[139] =

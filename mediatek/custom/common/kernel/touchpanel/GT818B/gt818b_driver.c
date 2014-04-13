@@ -36,10 +36,14 @@
 #include "tpd_custom_GT818B.h"
 
 #include "gt818_fw.h"
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+#endif
 
 extern struct tpd_device *tpd;
 
 static int tpd_flag = 0;
+//static int s2w_st_flag=0;
 static int tpd_halt=0;
 static struct task_struct *thread = NULL;
 static DECLARE_WAIT_QUEUE_HEAD(waiter);
@@ -290,6 +294,7 @@ static struct miscdevice tpd_misc_device = {
 
 //**********************************************
 #endif
+
 
 
 static int gt818_config_read_proc(char *page, char **start, off_t off, int count, int *eof, void *data)
@@ -1101,6 +1106,13 @@ static void tpd_down(int x, int y, int size, int id)
     input_mt_sync(tpd->dev);
     //TPD_DEBUG_PRINT_POINT( x, y, 1 );
     TPD_EM_PRINT(x, y, x, y, id-1, 1);
+//printk("[SWEEP2WAKE]: tpd down\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+		if (sweep2wake) {
+//printk("[SWEEP2WAKE]: detecting sweep\n");
+			detect_sweep2wake(x, y, jiffies, id);
+		}
+#endif
 	
     if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
     {   
@@ -1122,6 +1134,26 @@ static void tpd_up(int x, int y, int id)
     //input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, id-1);
     input_mt_sync(tpd->dev);
     TPD_EM_PRINT(x, y, x, y, id, 0);
+//printk("[SWEEP2WAKE]: inside tpd up\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+s2w_st_flag = 0;
+				if (sweep2wake > 0) {
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
+//printk("[SWEEP2WAKE]: resetin s2w param\n");
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
+					exec_count = true;
+					barrier[0] = false;
+					barrier[1] = false;
+					scr_on_touch = false;
+					tripoff = 0;
+					tripon = 0;
+					triptime = 0;
+				}
+				if (doubletap2wake && scr_suspended) {
+//printk("[SWEEP2WAKE]: detecting d2w\n");
+					doubletap2wake_func(x, y, jiffies);
+				}
+#endif
 	
     if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
     {   
@@ -1234,6 +1266,7 @@ static int touch_event_handler(void *unused)
         key = key&0x0f;
 #endif
         finger_num = buffer[0] & 0x0f;
+s2w_st_flag = finger_num;
         buf_status = buffer[0] & 0xf0;
      
         if ( tpd == NULL || tpd->dev == NULL )
@@ -1498,6 +1531,12 @@ static int tpd_local_init(void)
 //void tpd_suspend(struct i2c_client *client, pm_message_t message)
 static void tpd_suspend( struct early_suspend *h )
 {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	scr_suspended = true;
+//printk("[SWEEP2WAKE]: early suspernd\n");
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
     u8 mode = 0x01;
 	TPD_DMESG("tpd_suspend\n");  
 #if 0 // workaround for force tpd into sleep mode   
@@ -1540,11 +1579,22 @@ static void tpd_suspend( struct early_suspend *h )
     //return 0;
     TPD_DMESG("tpd_suspend ok\n"); 
 }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0)
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+#endif
+}
 
 /* Function to manage power-on resume */
 //void tpd_resume(struct i2c_client *client)
 static void tpd_resume( struct early_suspend *h )
 {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+//printk("[SWEEP2WAKE]: resume\n");
+	scr_suspended = false;
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
 #ifdef TPD_RESET_ISSUE_WORKAROUND
 		struct tpd_info_t tpd_info;
 		int err;
@@ -1660,6 +1710,11 @@ static void tpd_resume( struct early_suspend *h )
 
 TPD_DMESG(TPD_DEVICE " tpd_resume end \n" ); 	    
     //return 0;
+}
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0)
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+#endif
 }
 
 static struct tpd_driver_t tpd_device_driver =

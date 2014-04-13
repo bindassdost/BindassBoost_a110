@@ -57,6 +57,9 @@
 #include <linux/uaccess.h>
 #include "tpd_custom_ektf2136.h"
 #include "cust_gpio_usage.h"
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+#endif
 
 
 #include <mach/mt_pm_ldo.h>
@@ -125,6 +128,7 @@ static char panel_version = 0;
 static int tpd_flag = 0;
 static int point_num = 0;
 static int p_point_num = 0;
+//static int s2w_st_flag=0;
 
 static int ektf_boot_mode;
 static int x_history[POINTS_NUM];
@@ -267,6 +271,8 @@ struct file_operations elan_touch_fops = {
 *                  F U N C T I O N        D E F I N I T I O N
 ******************************************************************************
 */
+
+
 
 void tpd_reset()
 {
@@ -446,6 +452,13 @@ static void tpd_down(int x, int y, int id) {
 		    input_report_abs(tpd->dev, ABS_MT_POSITION_Y, y);
 		    input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, id); 
 		    input_mt_sync(tpd->dev);
+//printk("[SWEEP2WAKE]: tpd down\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+		if (sweep2wake) {
+//printk("[SWEEP2WAKE]: detecting sweep\n");
+			detect_sweep2wake(x, y, jiffies, id);
+		}
+#endif
 	   }
 	   if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
 	    {   
@@ -474,7 +487,27 @@ static void tpd_up(int x, int y,int *count) {
 		//Ivan	    input_report_abs(tpd->dev, ABS_MT_TOUCH_MAJOR, 0);
 		//Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_X, x);
 		//Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_Y, y);
-			    input_mt_sync(tpd->dev);	    
+			    input_mt_sync(tpd->dev);
+//printk("[SWEEP2WAKE]: inside tpd up\n");
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+s2w_st_flag = 0;
+				if (sweep2wake > 0) {
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
+//printk("[SWEEP2WAKE]: resetin s2w param\n");
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
+					exec_count = true;
+					barrier[0] = false;
+					barrier[1] = false;
+					scr_on_touch = false;
+					tripoff = 0;
+					tripon = 0;
+					triptime = 0;
+				}
+				if (doubletap2wake && scr_suspended) {
+//printk("[SWEEP2WAKE]: detecting d2w\n");
+					doubletap2wake_func(x, y, jiffies);
+				}
+#endif	    
 	    }
 	   if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
 	    {   
@@ -614,6 +647,7 @@ wait:
 		if(cinfo.count > 0)
 		{
 			int i;
+s2w_st_flag = cinfo.count;
 			for ( i=0; i < cinfo.count; i++ )
 			{
 				TPD_DEBUG("Point ID == %d, x == %d , y == %d\n!",cinfo.touch_id[i],cinfo.x[i],cinfo.y[i]);
@@ -1015,6 +1049,12 @@ static int tpd_local_init(void)
 }
 static int tpd_resume(struct i2c_client *client)
 {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+//printk("[SWEEP2WAKE]: resume\n");
+	scr_suspended = false;
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
     //unsigned char sleep_out[] = {0x54, 0x58, 0x00, 0x01};
     int retval = 0;
 	 if (i2c_client == NULL)
@@ -1040,8 +1080,20 @@ static int tpd_resume(struct i2c_client *client)
 	ctp_suspend = -1;
     return retval;
 }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0){
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+return 0;}
+#endif
+}
 static int tpd_suspend(struct i2c_client *client, pm_message_t message)
 {
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	scr_suspended = true;
+//printk("[SWEEP2WAKE]: early suspernd\n");
+	if (sweep2wake == 0 && doubletap2wake == 0)
+#endif
+	{
      if (i2c_client == NULL)
 	return;
 	if(work_lock) //tp is upgrading...
@@ -1056,6 +1108,12 @@ static int tpd_suspend(struct i2c_client *client, pm_message_t message)
     hwPowerDown(MT65XX_POWER_LDO_VGP2, "TP");
 	ctp_suspend = 1;
     return retval;
+}
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	else if (sweep2wake > 0 || doubletap2wake > 0){
+	mt65xx_eint_unmask(CUST_EINT_TOUCH_PANEL_NUM);
+return 0;}
+#endif
 }
 
 static int __init tpd_driver_init(void)

@@ -152,7 +152,7 @@ static struct i2c_client *i2c_client = NULL;
 static struct task_struct *thread = NULL;
 static DECLARE_WAIT_QUEUE_HEAD(waiter);
 static int tpd_flag=0;
-static int s2w_st_flag=0;
+//static int s2w_st_flag=0;
 extern int tp_boot_mode;
 
 //edit by Magnum 2012-8-31 ctp up Questions
@@ -511,26 +511,6 @@ static void tinno_tp_power_off(void)
     
 }    
 
-#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-/* gives back true if only one touch is recognized */
-bool is_single_touch(void)
-{
-	/*int i = 0, cnt = 0;
-
-	for( i= 0; i<MAX_NUM_FINGER; i++ ) {
-		if ((!fingerInfo[i].status) ||
-				(fingerInfo[i].status == TOUCH_EVENT_RELEASE))
-		continue;
-		else cnt++;
-	}*/
-printk("[SWEEP2WAKE]: inside single touch\n");
-	if (s2w_st_flag == 1)
-	return true;
-	else
-	return false;
-}
-#endif
-
 static int tpd_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id) {
 
     int err = 0;
@@ -648,10 +628,10 @@ static void tpd_down(int x, int y, int id) {
 		input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, id-1); 
 	    input_mt_sync(tpd->dev);
 	    tpd_down_state=1;
-printk("[SWEEP2WAKE]: tpd down\n");
+//printk("[SWEEP2WAKE]: tpd down\n");
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 		if (sweep2wake) {
-printk("[SWEEP2WAKE]: detecting sweep\n");
+//printk("[SWEEP2WAKE]: detecting sweep\n");
 			detect_sweep2wake(x, y, jiffies, id);
 		}
 #endif
@@ -690,13 +670,13 @@ static void tpd_up(int x, int y,int *count) {
 //Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_X, x);
 //Ivan	    input_report_abs(tpd->dev, ABS_MT_POSITION_Y, y);
 	    input_mt_sync(tpd->dev);
-printk("[SWEEP2WAKE]: inside tpd up\n");
+//printk("[SWEEP2WAKE]: inside tpd up\n");
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 s2w_st_flag = 0;
 				if (sweep2wake > 0) {
-					printk("[sweep2wake]:line : %d | func : %s\n", __LINE__, __func__);
-printk("[SWEEP2WAKE]: resetin s2w param\n");
-					printk("[sweep2wake]:line : %d | func : %s\n", __LINE__, __func__);
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
+//printk("[SWEEP2WAKE]: resetin s2w param\n");
+					//printk("[SWEEP2WAKE]:line : %d | func : %s\n", __LINE__, __func__);
 					exec_count = true;
 					barrier[0] = false;
 					barrier[1] = false;
@@ -706,7 +686,7 @@ printk("[SWEEP2WAKE]: resetin s2w param\n");
 					triptime = 0;
 				}
 				if (doubletap2wake && scr_suspended) {
-printk("[SWEEP2WAKE]: detecting d2w\n");
+//printk("[SWEEP2WAKE]: detecting d2w\n");
 					doubletap2wake_func(x, y, jiffies);
 				}
 #endif
@@ -945,7 +925,7 @@ s2w_st_flag = cinfo.count;
 void tpd_suspend(struct early_suspend *h) {
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	scr_suspended = true;
-printk("[SWEEP2WAKE]: early suspernd\n");
+//printk("[SWEEP2WAKE]: early suspernd\n");
 	if (sweep2wake == 0 && doubletap2wake == 0)
 #endif
 	{
@@ -986,7 +966,7 @@ printk("[SWEEP2WAKE]: early suspernd\n");
 void tpd_resume(struct early_suspend *h) {
 //    char wakeup[2] = {0xA5,0x00};
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
-printk("[SWEEP2WAKE]: resume\n");
+//printk("[SWEEP2WAKE]: resume\n");
 	scr_suspended = false;
 	if (sweep2wake == 0 && doubletap2wake == 0)
 #endif

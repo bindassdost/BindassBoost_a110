@@ -68,7 +68,7 @@
 #include "camera_custom_lens.h"
 
 
-const NVRAM_LENS_PARA_STRUCT OV8826AF_LENS_PARA_DEFAULT_VALUE =
+const NVRAM_LENS_PARA_STRUCT OV8827AF_LENS_PARA_DEFAULT_VALUE =
 {
     //Version
     NVRAM_CAMERA_LENS_FILE_VERSION,
@@ -80,10 +80,10 @@ const NVRAM_LENS_PARA_STRUCT OV8826AF_LENS_PARA_DEFAULT_VALUE =
     {
         {{
 	    {// Exact Search
-	    6,		// i4NormalNum
-	    6,		// i4MarcoNum
+	    10,		// i4NormalNum
+	    10,		// i4MarcoNum
     	{
-           0,  28,  110,  192, 274 ,356, 0, 0, 0, 0, 0, 
+           0,  59,  100,  159, 191 ,230, 277, 334, 393, 486, 0, 
            0, 0, 0, 0,   0,   0,   0,   0,   0,
              0,   0,   0,   0,   0,   0,   0,   0,   0,   0
               
@@ -100,10 +100,10 @@ const NVRAM_LENS_PARA_STRUCT OV8826AF_LENS_PARA_DEFAULT_VALUE =
         5,              // i4MATRIX_AF_DOF
         3,              // i4MATRIX_AF_WIN_NUM
         15000,          // i4AFC_THRES_OFFSET;
-        10,              // i4AFC_STEPSIZE
-        4,              // i4AFC_SPEED
-        13,//15,             // i4SCENE_CHANGE_THRES
-        8,//6,             // i4SCENE_CHANGE_CNT
+        4,              // i4AFC_STEPSIZE
+        6,              // i4AFC_SPEED
+        13,             // i4SCENE_CHANGE_THRES
+        8,             // i4SCENE_CHANGE_CNT
 
         15,             // i4SPOT_PERCENT_X
         15,             // i4SPOT_PERCENT_Y
@@ -120,7 +120,7 @@ const NVRAM_LENS_PARA_STRUCT OV8826AF_LENS_PARA_DEFAULT_VALUE =
 };
 
 
-UINT32 OV8826AF_getDefaultData(VOID *pDataBuf, UINT32 size)
+UINT32 OV8827AF_getDefaultData(VOID *pDataBuf, UINT32 size)
 {
     UINT32 dataSize = sizeof(NVRAM_LENS_PARA_STRUCT);
 
@@ -130,11 +130,11 @@ UINT32 OV8826AF_getDefaultData(VOID *pDataBuf, UINT32 size)
     }
 
     // copy from Buff to global struct
-    memcpy(pDataBuf, &OV8826AF_LENS_PARA_DEFAULT_VALUE, dataSize);
+    memcpy(pDataBuf, &OV8827AF_LENS_PARA_DEFAULT_VALUE, dataSize);
 
     return 0;
 }
 
-PFUNC_GETLENSDEFAULT pOV8826AF_getDefaultData = OV8826AF_getDefaultData;
+PFUNC_GETLENSDEFAULT pOV8827AF_getDefaultData = OV8827AF_getDefaultData;
 
 
