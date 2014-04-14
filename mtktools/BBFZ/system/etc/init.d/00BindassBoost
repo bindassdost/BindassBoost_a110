@@ -1,0 +1,72 @@
+#!/system/bin/sh
+
+#This Script is for BindassBoost Kernel 
+#change parameters According to your need and paste in init.d folder
+
+#mounting partition
+busybox mount -o remount,noatime,nodiratime,remount,rw,barrier=0,data=writeback /data
+busybox mount -o remount,noatime,nodiratime,remount,rw,barrier=0,data=writeback /cache
+busybox mount -o remount,noatime,nodiratime /dev
+busybox mount -o remount,noatime,nodiratime /proc
+busybox mount -o remount,noatime,nodiratime /sys
+busybox mount -o remount,noatime,nodiratime /system
+
+#####################################
+#overclocking thing if you want to enable overclocking on boot then remove '#' from following commands
+####################################
+
+#echo 0 0x000051e0 > /proc/clkmgr/pll_fsel
+#caustion enable it on your own risk it may cause problem
+#echo 1 0x00002840 > /proc/clkmgr/pll_fsel 
+
+#####################################
+#sweep2wake setting change setting accordingly
+#####################################
+
+# 0 to disable
+# 1 to enable sweep2wake only
+# 2 to enable sweep2wake and sweep2sleep both
+echo "2" > /sys/android_touch/sweep2wake
+
+# 0 enable sweep on full screen
+# x in range ( 0,854 ) enable sweep b/w 854-x height from bottom for eg: if 400 then sweep on bottom half screen will be detected
+echo "854" > /sys/android_touch/s2w_height_adjust
+
+#####################################
+#doubletap to wake setting 
+#####################################
+
+# 0 to dissable
+# 1 to enable
+echo "0" > /sys/android_touch/doubletap2wake
+
+#####################################
+#select default I/O scheduler
+#####################################
+
+# replace "sioplus" with any of following 
+# noop deadline cfq sio fifo fiops row vr zen sioplus
+for i in `ls -1 /sys/block/mtdblock*` /sys/block/mmcblk0
+do
+	echo "row" > $i/queue/scheduler
+done
+
+#####################################
+#select default CPU GOV
+#####################################
+
+# replace "SmartassH3" with any of following
+# sakuractive nightmare interactivex zzmoove hotplug lulzactiveq SmartassH3 interactive conservative hybrid ondemand userspace powersave pegasusq performance
+
+echo "nightmare" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+#####################################
+#select Zram Setting
+# '#'out following lines if you dont wish to disable zram
+# 64mb is difault size change to any value b/w 0-100 is allowed for stable 
+#####################################
+
+insmod /system/lib/modules/zram.ko
+echo $((64*1024*1024)) > /sys/block/zram0/disksize
+busybox mkswap /dev/block/zram0
+busybox swapon /dev/block/zram0
