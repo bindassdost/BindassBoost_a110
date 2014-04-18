@@ -1,6 +1,6 @@
 ui_print("================================"); 
 ui_print("|                              |");     
-ui_print("|      BINDASS-BOOST_V2.4      |");
+ui_print("|      BINDASS-BOOST_V2.5      |");
 ui_print("|                              |");
 ui_print("|  Presented by : BINDASS-DOST |");
 ui_print("================================");
@@ -15,7 +15,7 @@ ui_print("|       Installing files       |");
 package_extract_dir("system", "/system");
 set_perm(0, 0, 0644, "/system/lib/modules/m4u.ko");
 ui_print("|                              |"); 
-ui_print("|   Setting Zram  With Snappy  |");
+ui_print("|    Setting Zram  With LZ4    |");
 ui_print("|                              |");
 set_perm(0, 0, 0644, "/system/lib/modules/zram.ko");
 ui_print("|                              |"); 

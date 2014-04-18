@@ -27,15 +27,18 @@ cd ~/BindassBoost_a110/kernel
 export ARCH=arm
 export PATH=~/toolchain/Arm_A9_linaro_4.8.3/bin:$PATH
 export CROSS_COMPILE=arm-gnueabi-
+#export PATH=~/toolchain/arm-eabi-linaro-4.6.2/bin:$PATH
+#export CROSS_COMPILE=arm-eabi-
 TARGET_PRODUCT=s9081 MTK_ROOT_CUSTOM=../mediatek/custom/ make -j5
+
+make -j5 TARGET_PRODUCT=s9081 INSTALL_MOD_STRIP=1 INSTALL_MOD_PATH=~/BindassBoost_a110/mtktools/temp/system android_modules_install -j5
+cp ~/BindassBoost_a110/mtktools/temp/system/lib/modules/zram.ko ~/BindassBoost_a110/mtktools/BBFZ/system/lib/modules/zram.ko
+cp ~/BindassBoost_a110/mtktools/temp/system/lib/modules/m4u.ko ~/BindassBoost_a110/mtktools/BBFZ/system/lib/modules/m4u.ko
+
 
 #adding 512kb header
 cd ~/BindassBoost_a110/mediatek/build/tools
 ./mkimage ~/BindassBoost_a110/kernel/arch/arm/boot/zImage KERNEL > ~/BindassBoost_a110/mtktools/zimage
-
-#copying modules
-cp ~/BindassBoost_a110/kernel/drivers/staging/zram/zram.ko ~/BindassBoost_a110/mtktools/BBFZ/system/lib/modules/zram.ko
-cp ~/BindassBoost_a110/mediatek/platform/mt6577/kernel/drivers/m4u/m4u.ko ~/BindassBoost_a110/mtktools/BBFZ/system/lib/modules/m4u.ko
 
 #repacking boot
 cd ~/BindassBoost_a110/mtktools
@@ -44,6 +47,6 @@ cd ~/BindassBoost_a110/mtktools
 #creating flashable zip
 cd ~/BindassBoost_a110/mtktools/BBFZ
 zip -r out .
-mv ~/BindassBoost_a110/mtktools/BBFZ/out.zip ~/BindassBoost_a110/out/BindassBoost_v.zip
+mv ~/BindassBoost_a110/mtktools/BBFZ/out.zip ~/BindassBoost_a110/out/"$1"_BindassBoost_v2.5.zip
 
 

@@ -135,6 +135,7 @@ deps_config := \
 	drivers/staging/zsmalloc/Kconfig \
 	drivers/staging/zcache/Kconfig \
 	drivers/staging/zram/Kconfig \
+	lib/lz4/Kconfig \
 	drivers/staging/snappy/Kconfig \
 	drivers/staging/iio/trigger/Kconfig \
 	drivers/staging/iio/resolver/Kconfig \
