@@ -47,6 +47,6 @@ cd ~/BindassBoost_a110/mtktools
 #creating flashable zip
 cd ~/BindassBoost_a110/mtktools/BBFZ
 zip -r out .
-mv ~/BindassBoost_a110/mtktools/BBFZ/out.zip ~/BindassBoost_a110/out/"$1"_BindassBoost_v2.5.zip
+mv ~/BindassBoost_a110/mtktools/BBFZ/out.zip ~/BindassBoost_a110/out/"$1"_BindassBoost_v2.6.zip
 
 
