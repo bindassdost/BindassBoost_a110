@@ -70,6 +70,7 @@
 #include <cust_alsps.h>
 #include "cm3607.h"
 #include <linux/hwmsen_helper.h>
+#include <linux/proxy_sensor.h>
 
 #include <mach/mt_devs.h>
 #include <mach/mt_typedefs.h>
@@ -797,6 +798,26 @@ static int cm3607_get_ps_value(struct cm3607_priv *obj, u8 ps)
 		return -1;
 	}	
 	
+}
+
+int pocket_detection_check(void)
+{
+	struct cm3607_priv *obj = cm3607_obj;
+/*
+	if (!is_probe_success) {
+		printk("[cm3607] %s return by cm3607 probe fail\n", __func__);
+		return 0;
+	}
+*/
+	printk("[SWEEP2WAKE]: enabling sensor \n");
+	cm3607_power_down(0); // power on sensor
+	cm3607_enable_ps(obj, true); //enable near detection
+	msleep(50); // wait for ps to enable
+	cm3607_read_data(&obj->ps); // read data
+	int far = cm3607_get_ps_value(obj, obj->ps); //read ps value
+	cm3607_enable_ps(obj, false); //disable ps detection
+	cm3607_power_down(1); //turn off sensor
+	return far;
 }
 
 /****************************************************************************** 

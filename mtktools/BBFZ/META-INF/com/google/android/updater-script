@@ -1,6 +1,6 @@
 ui_print("================================"); 
 ui_print("|                              |");     
-ui_print("|      BINDASS-BOOST_V2.6      |");
+ui_print("|      BINDASS-BOOST_V2.7      |");
 ui_print("|                              |");
 ui_print("|  Presented by : BINDASS-DOST |");
 ui_print("================================");
